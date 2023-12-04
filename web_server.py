@@ -61,18 +61,38 @@ while True:
         try:
             f = open(fname, 'r')
 
-            lastModified = time.gmtime(os.path.getmtime(fname))
-            lastModified=f"{day_abbr[lastModified.tm_wday]}, {lastModified.tm_mday} {month_abbr[lastModified.tm_mon]} {lastModified.tm_year} {lastModified.tm_hour}:{lastModified.tm_min}:{lastModified.tm_sec} GMT"
-            print(f"Last Modified: {lastModified}")
+            #lastModified = time.gmtime(os.path.getmtime(fname))
+            #lastModifiedString=f"{day_abbr[lastModified.tm_wday]}, {lastModified.tm_mday} {month_abbr[lastModified.tm_mon]} {lastModified.tm_year} {lastModified.tm_hour}:{lastModified.tm_min}:{lastModified.tm_sec} GMT"
+            #print(f"Last Modified: {lastModifiedString}")
+
+            last_modified_time = os.path.getmtime(fname)
+            last_modified = time.gmtime(last_modified_time)
+            last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
+            print(f"Last Modified: {last_modified_str}")
+
+            # Check if the file was modified in the last 300 seconds
+            current_time = time.time()
+            if current_time - last_modified_time < 300:
+                print(304) #if the file is not over the ttl get the local version
+                clientSock.send(http304.encode())
+                fdata = f.read()
+                print(fdata)
+                for i in range(len(fdata)):
+                    clientSock.send(fdata[i].encode())
+                clientSock.send("\n".encode())
+                clientSock.close()
+            else:
+                os.utime(fname, (current_time, current_time)) #else go get the remote version
+                fdata = f.read()
+                clientSock.send(http200.encode())
+                print(fdata)
+                for i in range(len(fdata)):
+                    clientSock.send(fdata[i].encode())
+                clientSock.send("\n".encode())
+                clientSock.close()
             
 
-            fdata = f.read()
-            clientSock.send(http200.encode())
-            print(fdata)
-            for i in range(len(fdata)):
-                clientSock.send(fdata[i].encode())
-            clientSock.send("\n".encode())
-            clientSock.close()
+            
 
         except IOError: #file not in directory
             print(404)
