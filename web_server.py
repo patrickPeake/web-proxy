@@ -6,8 +6,8 @@ from calendar import day_abbr, month_abbr
 
 http200 = "HTTP/1.1 200 OK\n" #Done
 http304 = "HTTP/1.1 304 Not Modified\n" #Last-Modified gotten, not added to req/res yet
-http400 = "HTTP/1.1 400 Bad Request\n" #
-http403 = "HTTP/1.1 403 Forbidden\n" #
+http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
+http403 = "HTTP/1.1 403 Forbidden\n" #Done? Assume it's for non-GET requests?
 http404 = "HTTP/1.1 404 Not Found\n" #Done
 http411 = "HTTP/1.1 411 Length Required\n" #
 http418 = "HTTP/1.1 418 Im A Teapot\n" #
@@ -26,28 +26,43 @@ while True:
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
     print(f"Request:\n{req}\nEnd Of Request")
+
     fname = req.split()[1].strip('/')
-    print("Requested File ", fname.strip('/'))
-    try:
-        f = open(fname, 'r')
+    print("Requested File: ", fname.strip('/'))
 
-        lastModified = time.gmtime(os.path.getmtime(fname))
-        lastModified=f"{day_abbr[lastModified.tm_wday]}, {lastModified.tm_mday} {month_abbr[lastModified.tm_mon]} {lastModified.tm_year} {lastModified.tm_hour}:{lastModified.tm_min}:{lastModified.tm_sec} GMT"
-        print(f"Last Modified: {lastModified}")
-        
+    httpMethod = req.split()[0]
+    print("Request Method: ",httpMethod)
 
-        fdata = f.read()
-        clientSock.send(http200.encode())
-        print(fdata)
-        for i in range(len(fdata)):
-            clientSock.send(fdata[i].encode())
-        clientSock.send("\n".encode())
-        clientSock.close()
+    if("%" in fname): #space or other invalid character
+        print(400)
+        clientSock.send(http400.encode())
+    
+    if(httpMethod in ["POST", "PUT", "DELETE", "PATCH"]):
+        print(403)
+        clientSock.send(http403.encode())
+    elif(httpMethod=="GET"):
+        try:
+            f = open(fname, 'r')
 
-    except IOError: #file not in directory
-        print(404)
-        clientSock.send(http404.encode())
+            lastModified = time.gmtime(os.path.getmtime(fname))
+            lastModified=f"{day_abbr[lastModified.tm_wday]}, {lastModified.tm_mday} {month_abbr[lastModified.tm_mon]} {lastModified.tm_year} {lastModified.tm_hour}:{lastModified.tm_min}:{lastModified.tm_sec} GMT"
+            print(f"Last Modified: {lastModified}")
+            
 
+            fdata = f.read()
+            clientSock.send(http200.encode())
+            print(fdata)
+            for i in range(len(fdata)):
+                clientSock.send(fdata[i].encode())
+            clientSock.send("\n".encode())
+            clientSock.close()
+
+        except IOError: #file not in directory
+            print(404)
+            clientSock.send(http404.encode())
+    else: #http method wasn't valid
+        print(400)
+        clientSock.send(http400.encode())
     break
 
 servSock.close()
