@@ -3,14 +3,15 @@ import sys
 import os
 import time
 from calendar import day_abbr, month_abbr
+#import requests
 
 http200 = "HTTP/1.1 200 OK\n" #Done
 http304 = "HTTP/1.1 304 Not Modified\n" #Last-Modified gotten, not added to req/res yet
 http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
 http403 = "HTTP/1.1 403 Forbidden\n" #Done? Assume it's for non-GET requests?
 http404 = "HTTP/1.1 404 Not Found\n" #Done
-http411 = "HTTP/1.1 411 Length Required\n" #
-http418 = "HTTP/1.1 418 Im A Teapot\n" #
+http411 = "HTTP/1.1 411 Length Required\n" #Done
+http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
 
 
 
@@ -19,6 +20,7 @@ host = "127.0.0.1"
 port = 80
 servSock.bind((host, port))
 servSock.listen(69) #size of queue. 0 for only 1 interacting client, 1 for ____?. Can leave blank to set to the default
+allow411 = False
 
 while True:
     clientSock, clientAdd = servSock.accept()
@@ -26,6 +28,20 @@ while True:
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
     print(f"Request:\n{req}\nEnd Of Request")
+
+
+    headers = req.split('\r\n\r\n', 1)[0]  # Extract headers from the request
+
+    # Check if Content-Length header is present
+    if allow411:
+        if 'Content-Length' in headers:
+            content_length = int(headers.split('Content-Length: ')[1].split('\r\n')[0])
+            print(f"Content-Length: {content_length}")
+        else:
+            print("Content-Length header not found")
+            print(411)
+            clientSock.send(http411.encode()) #returns 411 if the content-length header is not included
+            break
 
     fname = req.split()[1].strip('/')
     print("Requested File: ", fname.strip('/'))
