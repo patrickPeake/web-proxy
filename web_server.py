@@ -20,7 +20,8 @@ host = "127.0.0.1"
 port = 80
 servSock.bind((host, port))
 servSock.listen(69) #size of queue. 0 for only 1 interacting client, 1 for ____?. Can leave blank to set to the default
-allow411 = False
+allow411 = False #because the test.html file doesnt have a contetn length header if we always check for 411 the server will never work. 
+# To verify that the 411 response is correct change this to true and it will check/return 411 responses
 
 while True:
     clientSock, clientAdd = servSock.accept()
