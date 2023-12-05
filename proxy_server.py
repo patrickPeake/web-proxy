@@ -2,12 +2,86 @@ from socket import *
 import sys
 
 
-servSock = socket(AF_INET, SOCK_STREAM, 0)
+http200 = "HTTP/1.1 200 OK\n" #Done
+http304 = "HTTP/1.1 304 Not Modified\n" #Done, needs to be edited to work with remote files and not local
+http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
+http403 = "HTTP/1.1 403 Forbidden\n" #Done
+http404 = "HTTP/1.1 404 Not Found\n" #Done
+http411 = "HTTP/1.1 411 Length Required\n" #Done
+http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
+
+proxSock = socket(AF_INET, SOCK_STREAM, 0)
+host = "127.0.0.1"
+port = 8080
+proxSock.bind((host, port))
+proxSock.listen(69)
 
 while True:
+    clientSock, clientAdd = proxSock.accept()
+    print("Accepted client", clientAdd[0], ",", clientAdd[1])
+
+    req = clientSock.recv(1024).decode() #max bytes receiving at once
+    print(f"Request:\n{req}\nEnd Of Request")
+
+    fname = req.split()[1].strip('/')
+    print("Requested File: ", fname.strip('/'))
+
+    httpMethod = req.split()[0]
+    print("Request Method: ",httpMethod)
+
+    if("%" in fname): #space or other invalid character. They've all got %
+        print(400)
+        clientSock.send(http400.encode())
+    elif(fname.split('/')[0]=="forbidden"): #trying to access forbidden directory
+        print(403)
+        print("Trying to access /forbidden")
+        clientSock.send(http403.encode())
+    elif(httpMethod in ["POST", "PUT", "DELETE", "PATCH"]): #trying to use forbidden methods
+        print(403)
+        clientSock.send(http403.encode())
+    elif(httpMethod=="GET"):
+        try:
+            f = open(fname, 'r')
+
+            last_modified_time = os.path.getmtime(fname)
+            last_modified = time.gmtime(last_modified_time)
+            last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
+            print(f"Last Modified: {last_modified_str}")
+
+            # Check if the file was modified in the last 300 seconds
+            current_time = time.time()
+            if current_time - last_modified_time < 300:
+                print(304) #if the file is not over the ttl get the local version
+                clientSock.send(http304.encode())
+                fdata = f.read()
+                print(fdata)
+                for i in range(len(fdata)):
+                    clientSock.send(fdata[i].encode())
+                clientSock.send("\n".encode())
+                clientSock.close()
+            else:
+                os.utime(fname, (current_time, current_time)) #else go get the remote version
+                fdata = f.read()
+                clientSock.send(http200.encode())
+                print(fdata)
+                for i in range(len(fdata)):
+                    clientSock.send(fdata[i].encode())
+                clientSock.send("\n".encode())
+                clientSock.close()
+            
+
+            
+
+        except IOError: #file not in directory
+            print(404)
+            clientSock.send(http404.encode())
+    else: #http method wasn't valid
+        print(400)
+        clientSock.send(http400.encode())
     break
 
-servSock.close()
+
+proxSock.close()
 sys.exit()
 
 #Using only what we know from Module 2 slides 29-34

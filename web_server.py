@@ -11,7 +11,7 @@ http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definiti
 http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
 http411 = "HTTP/1.1 411 Length Required\n" #Done
-http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
+http418 = "HTTP/1.1 418 Im A Teapot\n"
 
 
 
