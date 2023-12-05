@@ -22,10 +22,8 @@ response = ''
 
 while True:
     clientSock, clientAdd = proxSock.accept()
-    print("Accepted client to proxy", clientAdd[0], ",", clientAdd[1])
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
-    print(f"Prox Request:\n{req}\nEnd Of Request")
 
     req_path = urlparse(req.split()[1]).path
     fname = unquote(req_path).lstrip('/')
@@ -35,27 +33,22 @@ while True:
 
     # Create the full path by joining the script directory and the extracted filename
     full_path = os.path.join(script_dir, fname)
-    print(full_path)
 
     fileName = req.split()[1].strip('/')
-    #print("Prox Requested File: ", fname.strip('/'))
 
     httpMethod = req.split()[0]
-    print("Prox Request Method: ",httpMethod)
 
     if("%" in full_path): #space or other invalid character. They've all got %
         print(400)
         response = http400.encode()
     elif(httpMethod=="GET"):
         try:
-            #f = open(full_path, 'r')
 
             last_modified_time = os.path.getmtime(full_path)
             last_modified = time.gmtime(last_modified_time)
             last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
-            print(f"Last Modified: {last_modified_str}")
 
-            # Check if the file was modified in the last 300 seconds
+            # Check if the file was modified in the last n seconds
             current_time = time.time()
             if current_time - last_modified_time < 3:
                 print(304) #if the file is not over the ttl get the local version
@@ -65,17 +58,16 @@ while True:
                     fdata = local_file.read()
                 clientSock.send(fdata.encode())
             else:
-                print(f"{full_path} TTL exceeded")
                 hostSock = socket(AF_INET, SOCK_STREAM, 0)
                 hostSock.connect(("127.0.0.1",80)) #connect to the web server
-
-                print("Connected to web server")
                 hostSock.send(f"GET /{fileName} HTTP/1.0".encode())
+                clientSock.send(http200.encode())
+
+
                 with open(full_path, 'w') as cache_file:
                     count=0
                     while(True):
                         res=hostSock.recv(2048).decode()
-                        print(f"{count}:\n {res}\n")
                         count=count+1
                         if(count!=1):
                             cache_file.write(res)
@@ -87,11 +79,9 @@ while True:
                 
             
         except IOError: #file not in cache
-            print(f"{fileName} not in cache")
             hostSock = socket(AF_INET, SOCK_STREAM, 0)
-            if(True):#try:
+            if(True):
                 hostSock.connect(("127.0.0.1",80)) #connect to the web server
-                print("Connected to web server")
                 hostSock.send(f"GET /{fileName} HTTP/1.0".encode())
                 
                 with open(full_path, 'w') as cache_file:
@@ -104,15 +94,12 @@ while True:
 
                         if(len(res)>0):
                             clientSock.send(res.encode())
-                            #print(f"THE RES:\n{res}")
                         else:
                             break
                         hostSock.close()
                     clientSock.send(http200.encode())
     clientSock.close()
 clientSock, clientAdd = servSock.accept()
-#print("Accepted client", clientAdd[0], ",", clientAdd[1])
-
 
 
 proxSock.close()
@@ -145,7 +132,7 @@ sys.exit()
 #If no, explain why your server does not have this problem.
 
 #The server is susceptible to HOL blocking this could be fixed by either breaking the packets up into smaller constituent parts and using
-# a round robin to send them out roughly atthe same time, or by implementing multithreading so each time a request comes in a process on a 
+# a round robin to send them out roughly at the same time, or by implementing multithreading so each time a request comes in a process on a 
 # thread is created to handle it. If this were done the smaller objects could be transmitted concurently with the large one as long as 
 # resorces and clock/transmit time are shared  
 

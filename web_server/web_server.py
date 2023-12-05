@@ -1,5 +1,5 @@
-from socket import *
-import sys
+from socket import * # to test the web server responses please run "python.py" in this directory
+import sys             #the expected output is 200 403 403 404
 import os
 import time
 from calendar import day_abbr, month_abbr
@@ -11,7 +11,7 @@ http304 = "HTTP/1.1 304 Not Modified\n" #Done, needs to be edited to work with r
 http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
 http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
-http411 = "HTTP/1.1 411 Length Required\n" #Done
+http411 = "HTTP/1.1 411 Length Required\n" #Done to test is please set "allow411" to true
 http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
 
 
@@ -21,16 +21,14 @@ host = "127.0.0.1"
 port = 80
 servSock.bind((host, port))
 servSock.listen(69) #size of queue. 0 for only 1 interacting client, 1 for ____?. Can leave blank to set to the default
-allow411 = False #test.html doesnt have a content length header, so checking for it will always result in 411 
+allow411 = False #trying to fetch test.html doesnt have a content length header, so checking for it will always result in 411 
 #To allow 411 response set allow411=True
 
 while True:
     response = ''
     clientSock, clientAdd = servSock.accept()
-    #print("Accepted client", clientAdd[0], ",", clientAdd[1])
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
-    #print(f"Request:\n{req}\nEnd Of Request")
 
 
     headers = req.split('\r\n\r\n', 1)[0]  # Extract headers from the request
@@ -39,9 +37,7 @@ while True:
     if allow411:
         if 'Content-Length' in headers:
             content_length = int(headers.split('Content-Length: ')[1].split('\r\n')[0])
-            #print(f"Content-Length: {content_length}")
         else:
-            #print("Content-Length header not found")
             print(411)
             response = http411.encode() #returns 411 if the content-length header is not included
             clientSock.send(response)
@@ -56,21 +52,15 @@ while True:
 
     # Create the full path by joining the script directory and the extracted filename
     full_path = os.path.join(script_dir, fname)
-    print(full_path)
 
-    # Now use full_path for file operations
-    #fname = req.split()[1].strip('/')
-    #print("Requested File: ", fname.strip('/'))
 
     httpMethod = req.split()[0]
-    #print("Request Method: ",httpMethod)
 
     if("%" in full_path): #space or other invalid character. They've all got %
         print(400)
         response = http400.encode()
     elif(fname.split('/')[0]=="forbidden"): #trying to access forbidden directory
         print(403)
-        #print("Trying to access /forbidden")
         response = http403.encode()
     elif(httpMethod in ["POST", "PUT", "DELETE", "PATCH"]): #trying to use forbidden methods
         print(403)
@@ -78,11 +68,9 @@ while True:
     elif(httpMethod=="GET"):
         try:
             f = open(full_path, 'r')
-            print(full_path)
             last_modified_time = os.path.getmtime(full_path)
             last_modified = time.gmtime(last_modified_time)
             last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
-            #print(f"Last Modified: {last_modified_str}")
             
             # Check if the file was modified in the last 300 seconds
             current_time = time.time()
@@ -96,13 +84,11 @@ while True:
                 os.utime(full_path, (current_time, current_time)) #else go get the remote version
                 print(200)
                 fdata = f.read()
-                print(fdata)
                 clientSock.send(http200.encode())
                 response = http200.encode()
                 clientSock.send(fdata.encode())
         except IOError: #file not in directory
             if(response == ''):
-                #print("in 404")
                 print(404)
                 response = http404.encode()
     else: #http method wasn't valid
