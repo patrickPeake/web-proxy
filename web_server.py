@@ -6,7 +6,7 @@ from calendar import day_abbr, month_abbr
 
 
 http200 = "HTTP/1.1 200 OK\n" #Done
-http304 = "HTTP/1.1 304 Not Modified\n" #Last-Modified gotten, not added to req/res yet
+http304 = "HTTP/1.1 304 Not Modified\n" #done, needs to be edited to work with remote files and not local
 http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
 http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
@@ -20,7 +20,7 @@ host = "127.0.0.1"
 port = 80
 servSock.bind((host, port))
 servSock.listen(69) #size of queue. 0 for only 1 interacting client, 1 for ____?. Can leave blank to set to the default
-allow411 = False #because the test.html file doesnt have a contetn length header if we always check for 411 the server will never work. 
+allow411 = False #test.html doesnt have a content length header, so checking for it will always result in 411 
 # To verify that the 411 response is correct change this to true and it will check/return 411 responses
 
 while True:
