@@ -1,4 +1,4 @@
-from socket import *
+from socket import * #if it doesnt work the first time please try it again
 import sys
 import os
 import time
@@ -104,6 +104,8 @@ clientSock, clientAdd = servSock.accept()
 
 proxSock.close()
 sys.exit()
+
+#https://github.com/patrickPeake/web-proxy
 
 #Using only what we know from Module 2 slides 29-34
 
