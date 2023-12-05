@@ -11,7 +11,7 @@ http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definiti
 http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
 http411 = "HTTP/1.1 411 Length Required\n" #Done
-http418 = "HTTP/1.1 418 Im A Teapot\n"
+http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
 
 
 
@@ -29,7 +29,7 @@ while True:
     #print("Accepted client", clientAdd[0], ",", clientAdd[1])
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
-    #print(f"Request:\n{req}\nEnd Of Request")
+    print(f"Request:\n{req}\nEnd Of Request")
 
 
     headers = req.split('\r\n\r\n', 1)[0]  # Extract headers from the request
@@ -46,7 +46,7 @@ while True:
             break
 
     fname = req.split()[1].strip('/')
-    #print("Requested File: ", fname.strip('/'))
+    print("Requested File: ", fname.strip('/'))
 
     httpMethod = req.split()[0]
     #print("Request Method: ",httpMethod)
@@ -63,22 +63,25 @@ while True:
         response = http403.encode()
     elif(httpMethod=="GET"):
         try:
+            print(f"BASTARD:open({fname}, 'r')")
             f = open(fname, 'r')
-
             last_modified_time = os.path.getmtime(fname)
             last_modified = time.gmtime(last_modified_time)
             last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
             #print(f"Last Modified: {last_modified_str}")
-
+            
             # Check if the file was modified in the last 300 seconds
             current_time = time.time()
-            if current_time - last_modified_time < 300:
+            if current_time - last_modified_time < 300000000000:
+                print("Fuckhead.")
                 print(304) #if the file is not over the ttl get the local version
                 clientSock.send(http304.encode())
                 response = http304.encode()
                 fdata = f.read()
                 clientSock.send(fdata.encode())
+                clientSock.close()
             else:
+                print("c.\nc\nc\nc\nc\nc\nc\nc\nc\nc")
                 os.utime(fname, (current_time, current_time)) #else go get the remote version
                 print(200)
                 fdata = f.read()

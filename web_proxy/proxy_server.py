@@ -75,6 +75,9 @@ while True:
                     res=hostSock.recv(2048).decode()
                     if(len(res)>0):
                         clientSock.send(res.encode())
+                        print(f"THE RES:\n{res}")
+                        #if("<!DOCTYPE html>" in res):
+                        #    print("It be an HTML")
                     else:
                         break
                 #serverRes=tempReq.readlines()
