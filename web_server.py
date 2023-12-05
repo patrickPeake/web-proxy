@@ -8,7 +8,7 @@ from calendar import day_abbr, month_abbr
 http200 = "HTTP/1.1 200 OK\n" #Done
 http304 = "HTTP/1.1 304 Not Modified\n" #Last-Modified gotten, not added to req/res yet
 http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
-http403 = "HTTP/1.1 403 Forbidden\n" #Done? Assume it's for non-GET requests?
+http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
 http411 = "HTTP/1.1 411 Length Required\n" #Done
 http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
@@ -50,11 +50,14 @@ while True:
     httpMethod = req.split()[0]
     print("Request Method: ",httpMethod)
 
-    if("%" in fname): #space or other invalid character
+    if("%" in fname): #space or other invalid character. They've all got %
         print(400)
         clientSock.send(http400.encode())
-    
-    if(httpMethod in ["POST", "PUT", "DELETE", "PATCH"]):
+    elif(fname.split('/')[0]=="forbidden"): #trying to access forbidden directory
+        print(403)
+        print("Trying to access /forbidden")
+        clientSock.send(http403.encode())
+    elif(httpMethod in ["POST", "PUT", "DELETE", "PATCH"]): #trying to use forbidden methods
         print(403)
         clientSock.send(http403.encode())
     elif(httpMethod=="GET"):
@@ -90,8 +93,6 @@ while True:
                     clientSock.send(fdata[i].encode())
                 clientSock.send("\n".encode())
                 clientSock.close()
-            
-
             
 
         except IOError: #file not in directory
