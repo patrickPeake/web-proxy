@@ -72,17 +72,16 @@ while True:
                 print("Connected to web server")
                 hostSock.send(f"GET /{fileName} HTTP/1.0".encode())
                 with open(full_path, 'w') as cache_file:
+                    count=0
                     while(True):
                         res=hostSock.recv(2048).decode()
-                        print("\n\n\n")
-                        print(res)
-                        print("\n\n\n")
-                        
-                        cache_file.write(res)
+                        print(f"{count}:\n {res}\n")
+                        count=count+1
+                        if(count!=1):
+                            cache_file.write(res)
                         clientSock.send(http200.encode())
                         if(len(res)>0):
                             clientSock.send(res.encode())
-                            #print(f"THE RES:\n{res}")
                         else:
                             break
                     hostSock.close()
@@ -97,13 +96,12 @@ while True:
                 hostSock.send(f"GET /{fileName} HTTP/1.0".encode())
                 
                 with open(full_path, 'w') as cache_file:
+                    count=0
                     while(True):
                         res=hostSock.recv(2048).decode()
-                        print("\n\n\n")
-                        print(res)
-                        print("\n\n\n")
-                        
-                        cache_file.write(res)
+                        count=count+1
+                        if(count!=1):
+                            cache_file.write(res)
 
                         if(len(res)>0):
                             clientSock.send(res.encode())
@@ -112,6 +110,7 @@ while True:
                             break
                         hostSock.close()
                     clientSock.send(http200.encode())
+    clientSock.close()
 clientSock, clientAdd = servSock.accept()
 #print("Accepted client", clientAdd[0], ",", clientAdd[1])
 
