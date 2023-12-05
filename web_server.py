@@ -3,7 +3,7 @@ import sys
 import os
 import time
 from calendar import day_abbr, month_abbr
-#import requests
+
 
 http200 = "HTTP/1.1 200 OK\n" #Done
 http304 = "HTTP/1.1 304 Not Modified\n" #Last-Modified gotten, not added to req/res yet
