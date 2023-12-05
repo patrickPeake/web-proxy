@@ -1,0 +1,10 @@
+The main difference between a proxy server and a web server is that for requests that cannot be met from the locally stored files, a web server
+responds "404 file not found" while when a proxy server is unable to fill a request from a client it acts as a client to a web server to 
+fetch the requested file and then serve it from its cache/local storage.
+
+the non 404 responses such as 403, 400, 411 etc remain the same along with 200, while 304 serves the cached file and 
+a proxy server will only respond 404 when the origin server it acts as a client to responds 404.
+
+A minimal proxy server would ensure that the requests are well formed (valid http get request) and check its cache for the requested resource. If it is found and still 
+has time left to live then 304 is returned along with the resource. Otherwise it acts as a client to fetch the requested resource from the origin 
+server and sends it to the origional client once the resource is recieved.
