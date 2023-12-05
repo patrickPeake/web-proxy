@@ -103,7 +103,7 @@ while True:
     else: #http method wasn't valid
         print(400)
         clientSock.send(http400.encode())
-    break
+    #break
 
 servSock.close()
 sys.exit()
