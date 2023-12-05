@@ -79,7 +79,6 @@ while True:
                         count=count+1
                         if(count!=1):
                             cache_file.write(res)
-                        clientSock.send(http200.encode())
                         if(len(res)>0):
                             clientSock.send(res.encode())
                         else:
