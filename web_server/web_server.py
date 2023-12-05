@@ -108,7 +108,6 @@ while True:
     else: #http method wasn't valid
         print(400)
         response = http400.encode()
-    #print(f"Fuckhead:{response}")
     if(response != http304.encode() and response != http200.encode() and response != ''):
         clientSock.send(response)
     clientSock.close()
