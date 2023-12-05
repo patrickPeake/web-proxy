@@ -1,11 +1,13 @@
 from socket import *
 import sys
+import os
+import time
+from calendar import day_abbr, month_abbr
 
 
 http200 = "HTTP/1.1 200 OK\n" #Done
 http304 = "HTTP/1.1 304 Not Modified\n" #Done, needs to be edited to work with remote files and not local
 http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
-http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
 http411 = "HTTP/1.1 411 Length Required\n" #Done
 http418 = "HTTP/1.1 418 Im A Teapot\n" #Not Required
@@ -18,27 +20,20 @@ proxSock.listen(69)
 
 while True:
     clientSock, clientAdd = proxSock.accept()
-    print("Accepted client", clientAdd[0], ",", clientAdd[1])
+    print("Accepted client to proxy", clientAdd[0], ",", clientAdd[1])
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
-    print(f"Request:\n{req}\nEnd Of Request")
+    print(f"Prox Request:\n{req}\nEnd Of Request")
 
     fname = req.split()[1].strip('/')
-    print("Requested File: ", fname.strip('/'))
+    print("Prox Requested File: ", fname.strip('/'))
 
     httpMethod = req.split()[0]
-    print("Request Method: ",httpMethod)
+    print("Prox Request Method: ",httpMethod)
 
     if("%" in fname): #space or other invalid character. They've all got %
         print(400)
         clientSock.send(http400.encode())
-    elif(fname.split('/')[0]=="forbidden"): #trying to access forbidden directory
-        print(403)
-        print("Trying to access /forbidden")
-        clientSock.send(http403.encode())
-    elif(httpMethod in ["POST", "PUT", "DELETE", "PATCH"]): #trying to use forbidden methods
-        print(403)
-        clientSock.send(http403.encode())
     elif(httpMethod=="GET"):
         try:
             f = open(fname, 'r')
@@ -69,16 +64,29 @@ while True:
                 clientSock.send("\n".encode())
                 clientSock.close()
             
+        except IOError: #file not in cache
+            print(f"{fname} not in cache")
+            hostSock = socket(AF_INET, SOCK_STREAM, 0)
+            if(True):#try:
+                hostSock.connect(("127.0.0.1",80)) #connect to the web server
+                print("Connected to web server")
+                hostSock.send(f"GET /{fname} HTTP/1.0".encode())
+                while(True):
+                    res=hostSock.recv(2048).decode()
+                    if(len(res)>0):
+                        clientSock.send(res.encode())
+                    else:
+                        break
+                #serverRes=tempReq.readlines()
+                #f = open(fname, 'wb')
+                #for i in range(len(serverRes)):
+                #    f.write(serverRes[i].encode())
+                #    print(f"Line {i}: {serverRes[i]}")
+                #    clientSock.send(serverRes[i])
+                clientSock.send(http200.encode())
+clientSock, clientAdd = servSock.accept()
+#print("Accepted client", clientAdd[0], ",", clientAdd[1])
 
-            
-
-        except IOError: #file not in directory
-            print(404)
-            clientSock.send(http404.encode())
-    else: #http method wasn't valid
-        print(400)
-        clientSock.send(http400.encode())
-    break
 
 
 proxSock.close()
