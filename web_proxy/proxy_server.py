@@ -45,13 +45,12 @@ while True:
 
             # Check if the file was modified in the last 300 seconds
             current_time = time.time()
-            if current_time - last_modified_time < 300:
+            if current_time - last_modified_time < 3:
                 print(304) #if the file is not over the ttl get the local version
                 clientSock.send(http304.encode())
                 fdata = f.read()
                 print(fdata)
-                for i in range(len(fdata)):
-                    clientSock.send(fdata[i].encode())
+                clientSock.send(fdata.encode())
                 clientSock.send("\n".encode())
                 clientSock.close()
             else:
@@ -59,8 +58,7 @@ while True:
                 fdata = f.read()
                 clientSock.send(http200.encode())
                 print(fdata)
-                for i in range(len(fdata)):
-                    clientSock.send(fdata[i].encode())
+                clientSock.send(fdata.encode())
                 clientSock.send("\n".encode())
                 clientSock.close()
             

@@ -65,7 +65,6 @@ while True:
         response = http403.encode()
     elif(httpMethod=="GET"):
         try:
-            print(f"BASTARD:open({fname}, 'r')")
             f = open(fname, 'r')
             last_modified_time = os.path.getmtime(fname)
             last_modified = time.gmtime(last_modified_time)
@@ -74,16 +73,13 @@ while True:
             
             # Check if the file was modified in the last 300 seconds
             current_time = time.time()
-            if current_time - last_modified_time < 300000000000:
-                print("Fuckhead.")
+            if current_time - last_modified_time < 3:
                 print(304) #if the file is not over the ttl get the local version
                 clientSock.send(http304.encode())
                 response = http304.encode()
                 fdata = f.read()
                 clientSock.send(fdata.encode())
-                clientSock.close()
             else:
-                print("c.\nc\nc\nc\nc\nc\nc\nc\nc\nc")
                 os.utime(fname, (current_time, current_time)) #else go get the remote version
                 print(200)
                 fdata = f.read()
@@ -98,6 +94,7 @@ while True:
     else: #http method wasn't valid
         print(400)
         response = http400.encode()
+    #print(f"Fuckhead:{response}")
     if(response != http304.encode() and response != http200.encode() and response != ''):
         clientSock.send(response)
     clientSock.close()
