@@ -91,8 +91,6 @@ while True:
                 clientSock.close()
             
 
-            
-
         except IOError: #file not in directory
             print(404)
             clientSock.send(http404.encode())
