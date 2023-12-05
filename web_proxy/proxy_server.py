@@ -3,6 +3,7 @@ import sys
 import os
 import time
 from calendar import day_abbr, month_abbr
+from urllib.parse import unquote, urlparse
 
 
 http200 = "HTTP/1.1 200 OK\n" #Done
@@ -26,20 +27,30 @@ while True:
     req = clientSock.recv(1024).decode() #max bytes receiving at once
     print(f"Prox Request:\n{req}\nEnd Of Request")
 
-    fname = req.split()[1].strip('/')
-    print("Prox Requested File: ", fname.strip('/'))
+    req_path = urlparse(req.split()[1]).path
+    fname = unquote(req_path).lstrip('/')
+
+    # Get the directory of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Create the full path by joining the script directory and the extracted filename
+    full_path = os.path.join(script_dir, fname)
+    print(full_path)
+
+    fileName = req.split()[1].strip('/')
+    #print("Prox Requested File: ", fname.strip('/'))
 
     httpMethod = req.split()[0]
     print("Prox Request Method: ",httpMethod)
 
-    if("%" in fname): #space or other invalid character. They've all got %
+    if("%" in full_path): #space or other invalid character. They've all got %
         print(400)
         response = http400.encode()
     elif(httpMethod=="GET"):
         try:
-            f = open(fname, 'r')
+            #f = open(full_path, 'r')
 
-            last_modified_time = os.path.getmtime(fname)
+            last_modified_time = os.path.getmtime(full_path)
             last_modified = time.gmtime(last_modified_time)
             last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
             print(f"Last Modified: {last_modified_str}")
@@ -50,22 +61,22 @@ while True:
                 print(304) #if the file is not over the ttl get the local version
                 clientSock.send(http304.encode())
                 response = http304.encode()
-                with open(fname, 'r') as local_file:
+                with open(full_path, 'r') as local_file:
                     fdata = local_file.read()
                 clientSock.send(fdata.encode())
             else:
-                print(f"{fname} TTL exceeded")
+                print(f"{full_path} TTL exceeded")
                 hostSock = socket(AF_INET, SOCK_STREAM, 0)
                 hostSock.connect(("127.0.0.1",80)) #connect to the web server
 
                 print("Connected to web server")
-                hostSock.send(f"GET /{fname} HTTP/1.0".encode())
+                hostSock.send(f"GET /{fileName} HTTP/1.0".encode())
                 while(True):
                     res=hostSock.recv(2048).decode()
                     print("\n\n\n")
                     print(res)
                     print("\n\n\n")
-                    with open(fname, 'w') as cache_file:
+                    with open(full_path, 'w') as cache_file:
                         cache_file.write(res)
 
                     if(len(res)>0):
@@ -77,12 +88,12 @@ while True:
                 clientSock.send(http200.encode())
             
         except IOError: #file not in cache
-            print(f"{fname} not in cache")
+            print(f"{fileName} not in cache")
             hostSock = socket(AF_INET, SOCK_STREAM, 0)
             if(True):#try:
                 hostSock.connect(("127.0.0.1",80)) #connect to the web server
                 print("Connected to web server")
-                hostSock.send(f"GET /{fname} HTTP/1.0".encode())
+                hostSock.send(f"GET /{fileName} HTTP/1.0".encode())
                 
                 
                 while(True):
@@ -90,7 +101,7 @@ while True:
                     print("\n\n\n")
                     print(res)
                     print("\n\n\n")
-                    with open(fname, 'w') as cache_file:
+                    with open(full_path, 'w') as cache_file:
                         cache_file.write(res)
 
                     if(len(res)>0):

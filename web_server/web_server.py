@@ -3,6 +3,7 @@ import sys
 import os
 import time
 from calendar import day_abbr, month_abbr
+from urllib.parse import unquote, urlparse
 
 
 http200 = "HTTP/1.1 200 OK\n" #Done
@@ -47,13 +48,24 @@ while True:
             clientSock.close()
             continue
 
-    fname = req.split()[1].strip('/')
-    print("Requested File: ", fname.strip('/'))
+    req_path = urlparse(req.split()[1]).path
+    fname = unquote(req_path).lstrip('/')
+
+    # Get the directory of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Create the full path by joining the script directory and the extracted filename
+    full_path = os.path.join(script_dir, fname)
+    print(full_path)
+
+    # Now use full_path for file operations
+    #fname = req.split()[1].strip('/')
+    #print("Requested File: ", fname.strip('/'))
 
     httpMethod = req.split()[0]
     #print("Request Method: ",httpMethod)
 
-    if("%" in fname): #space or other invalid character. They've all got %
+    if("%" in full_path): #space or other invalid character. They've all got %
         print(400)
         response = http400.encode()
     elif(fname.split('/')[0]=="forbidden"): #trying to access forbidden directory
@@ -65,9 +77,9 @@ while True:
         response = http403.encode()
     elif(httpMethod=="GET"):
         try:
-            f = open(fname, 'r')
-            print(fname)
-            last_modified_time = os.path.getmtime(fname)
+            f = open(full_path, 'r')
+            print(full_path)
+            last_modified_time = os.path.getmtime(full_path)
             last_modified = time.gmtime(last_modified_time)
             last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
             #print(f"Last Modified: {last_modified_str}")
@@ -81,7 +93,7 @@ while True:
                 fdata = f.read()
                 clientSock.send(fdata.encode())
             else:
-                os.utime(fname, (current_time, current_time)) #else go get the remote version
+                os.utime(full_path, (current_time, current_time)) #else go get the remote version
                 print(200)
                 fdata = f.read()
                 print(fdata)
