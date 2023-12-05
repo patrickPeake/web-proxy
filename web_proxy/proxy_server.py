@@ -17,6 +17,7 @@ host = "127.0.0.1"
 port = 8080
 proxSock.bind((host, port))
 proxSock.listen(69)
+response = ''
 
 while True:
     clientSock, clientAdd = proxSock.accept()
@@ -33,7 +34,7 @@ while True:
 
     if("%" in fname): #space or other invalid character. They've all got %
         print(400)
-        clientSock.send(http400.encode())
+        response = http400.encode()
     elif(httpMethod=="GET"):
         try:
             f = open(fname, 'r')
@@ -48,19 +49,32 @@ while True:
             if current_time - last_modified_time < 3:
                 print(304) #if the file is not over the ttl get the local version
                 clientSock.send(http304.encode())
-                fdata = f.read()
-                print(fdata)
+                response = http304.encode()
+                with open(fname, 'r') as local_file:
+                    fdata = local_file.read()
                 clientSock.send(fdata.encode())
-                clientSock.send("\n".encode())
-                clientSock.close()
             else:
-                os.utime(fname, (current_time, current_time)) #else go get the remote version
-                fdata = f.read()
+                print(f"{fname} TTL exceeded")
+                hostSock = socket(AF_INET, SOCK_STREAM, 0)
+                hostSock.connect(("127.0.0.1",80)) #connect to the web server
+
+                print("Connected to web server")
+                hostSock.send(f"GET /{fname} HTTP/1.0".encode())
+                while(True):
+                    res=hostSock.recv(2048).decode()
+                    print("\n\n\n")
+                    print(res)
+                    print("\n\n\n")
+                    with open(fname, 'w') as cache_file:
+                        cache_file.write(res)
+
+                    if(len(res)>0):
+                        clientSock.send(res.encode())
+                        #print(f"THE RES:\n{res}")
+                    else:
+                        break
+                hostSock.close()
                 clientSock.send(http200.encode())
-                print(fdata)
-                clientSock.send(fdata.encode())
-                clientSock.send("\n".encode())
-                clientSock.close()
             
         except IOError: #file not in cache
             print(f"{fname} not in cache")
@@ -69,21 +83,22 @@ while True:
                 hostSock.connect(("127.0.0.1",80)) #connect to the web server
                 print("Connected to web server")
                 hostSock.send(f"GET /{fname} HTTP/1.0".encode())
+                
+                
                 while(True):
                     res=hostSock.recv(2048).decode()
+                    print("\n\n\n")
+                    print(res)
+                    print("\n\n\n")
+                    with open(fname, 'w') as cache_file:
+                        cache_file.write(res)
+
                     if(len(res)>0):
                         clientSock.send(res.encode())
-                        print(f"THE RES:\n{res}")
-                        #if("<!DOCTYPE html>" in res):
-                        #    print("It be an HTML")
+                        #print(f"THE RES:\n{res}")
                     else:
                         break
-                #serverRes=tempReq.readlines()
-                #f = open(fname, 'wb')
-                #for i in range(len(serverRes)):
-                #    f.write(serverRes[i].encode())
-                #    print(f"Line {i}: {serverRes[i]}")
-                #    clientSock.send(serverRes[i])
+                    hostSock.close()
                 clientSock.send(http200.encode())
 clientSock, clientAdd = servSock.accept()
 #print("Accepted client", clientAdd[0], ",", clientAdd[1])

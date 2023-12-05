@@ -29,7 +29,7 @@ while True:
     #print("Accepted client", clientAdd[0], ",", clientAdd[1])
 
     req = clientSock.recv(1024).decode() #max bytes receiving at once
-    print(f"Request:\n{req}\nEnd Of Request")
+    #print(f"Request:\n{req}\nEnd Of Request")
 
 
     headers = req.split('\r\n\r\n', 1)[0]  # Extract headers from the request
@@ -66,6 +66,7 @@ while True:
     elif(httpMethod=="GET"):
         try:
             f = open(fname, 'r')
+            print(fname)
             last_modified_time = os.path.getmtime(fname)
             last_modified = time.gmtime(last_modified_time)
             last_modified_str = f"{day_abbr[last_modified.tm_wday]}, {last_modified.tm_mday} {month_abbr[last_modified.tm_mon]} {last_modified.tm_year} {last_modified.tm_hour}:{last_modified.tm_min}:{last_modified.tm_sec} GMT"
@@ -83,6 +84,7 @@ while True:
                 os.utime(fname, (current_time, current_time)) #else go get the remote version
                 print(200)
                 fdata = f.read()
+                print(fdata)
                 clientSock.send(http200.encode())
                 response = http200.encode()
                 clientSock.send(fdata.encode())
