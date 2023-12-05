@@ -43,7 +43,9 @@ while True:
             #print("Content-Length header not found")
             print(411)
             response = http411.encode() #returns 411 if the content-length header is not included
-            break
+            clientSock.send(response)
+            clientSock.close()
+            continue
 
     fname = req.split()[1].strip('/')
     print("Requested File: ", fname.strip('/'))
