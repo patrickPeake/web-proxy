@@ -6,7 +6,7 @@ from calendar import day_abbr, month_abbr
 
 
 http200 = "HTTP/1.1 200 OK\n" #Done
-http304 = "HTTP/1.1 304 Not Modified\n" #done, needs to be edited to work with remote files and not local
+http304 = "HTTP/1.1 304 Not Modified\n" #Done, needs to be edited to work with remote files and not local
 http400 = "HTTP/1.1 400 Bad Request\n" #Done? If HTTP method not valid? Definition:Error not any of the others.
 http403 = "HTTP/1.1 403 Forbidden\n" #Done
 http404 = "HTTP/1.1 404 Not Found\n" #Done
@@ -21,7 +21,7 @@ port = 80
 servSock.bind((host, port))
 servSock.listen(69) #size of queue. 0 for only 1 interacting client, 1 for ____?. Can leave blank to set to the default
 allow411 = False #test.html doesnt have a content length header, so checking for it will always result in 411 
-# To verify that the 411 response is correct change this to true and it will check/return 411 responses
+#To allow 411 response set allow411=True
 
 while True:
     clientSock, clientAdd = servSock.accept()
@@ -63,10 +63,6 @@ while True:
     elif(httpMethod=="GET"):
         try:
             f = open(fname, 'r')
-
-            #lastModified = time.gmtime(os.path.getmtime(fname))
-            #lastModifiedString=f"{day_abbr[lastModified.tm_wday]}, {lastModified.tm_mday} {month_abbr[lastModified.tm_mon]} {lastModified.tm_year} {lastModified.tm_hour}:{lastModified.tm_min}:{lastModified.tm_sec} GMT"
-            #print(f"Last Modified: {lastModifiedString}")
 
             last_modified_time = os.path.getmtime(fname)
             last_modified = time.gmtime(last_modified_time)
